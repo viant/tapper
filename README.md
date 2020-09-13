@@ -1,7 +1,7 @@
 # High performant transaction logger for go
 
 [![Application operation performance metric.](https://goreportcard.com/badge/github.com/viant/tapper)](https://goreportcard.com/report/github.com/viant/tapper)
-[![GoDoc](https://godoc.org/github.com/viant/tapper?status.svg)](https://pkg.go.dev/github.com/viant/tapper/?tab=doc)
+[![GoDoc](https://godoc.org/github.com/viant/tapper?status.svg)](https://pkg.go.dev/mod/github.com/viant/tapper)
 
 This library is compatible with Go 1.12+
 
