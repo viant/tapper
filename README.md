@@ -1,5 +1,4 @@
-# Transaction logger for go
-
+# High performant transaction logger for go
 
 [![Application operation performance metric.](https://goreportcard.com/badge/github.com/viant/tapper)](https://goreportcard.com/report/github.com/viant/tapper)
 [![GoDoc](https://godoc.org/github.com/viant/tapper?status.svg)](https://godoc.org/github.com/viant/tapper)
@@ -26,33 +25,32 @@ or a shell script.
 ### Usage
 
 ```go
-func ExampleLogger_Log() {
 
-    cfg := &config.Stream{
-		URL: "/tmp/logfile.log",
-		Rotation: &config.Rotation{
-			EveryMs: 20000,
-			URL:     "s3://my.bucket/data/logfile.log.[yyyyMMdd_HH]-%v",
-		},
-	}
-	logger, err := log.New(cfg, "myID", afs.New())
-	if err != nil {
-		slog.Fatal(err)
-	}
-	provider := msg.NewProvider(2048, 32)
-	for i :=0;i<100;i++ {
-		message := provider.NewMessage()
-		message.PutString("k1", "value1")
-		message.PutInt("k2", 2)
-		message.PutStrings("k3", []string{"1", "3"})
-		err = logger.Log(message)
-		if err != nil {
-			slog.Fatal(err)
-		}
-		message.Free()
-	}
-	logger.Close()
+cfg := &config.Stream{
+    URL: "/tmp/logfile.log",
+    Rotation: &config.Rotation{
+        EveryMs: 20000,
+        URL:     "s3://my.bucket/data/logfile.log.[yyyyMMdd_HH]-%v",
+    },
 }
+logger, err := log.New(cfg, "myID", afs.New())
+if err != nil {
+    slog.Fatal(err)
+}
+provider := msg.NewProvider(2048, 32)
+for i :=0;i<100;i++ {
+    message := provider.NewMessage()
+    message.PutString("k1", "value1")
+    message.PutInt("k2", 2)
+    message.PutStrings("k3", []string{"1", "3"})
+    err = logger.Log(message)
+    if err != nil {
+        slog.Fatal(err)
+    }
+    message.Free()
+}
+logger.Close()
+
 ```
 
 ### Configuration
@@ -125,9 +123,9 @@ To reduce log message memory overhead, a message can be created by [Provider](ms
 handles data pooling. You can create a log message with the following snippet.
 
 ```go
-  	provider := msg.NewProvider(avgMessageSize, concurrency)
-    message := provider.NewMessage()
-    defer message.Free()
+provider := msg.NewProvider(avgMessageSize, concurrency)
+message := provider.NewMessage()
+defer message.Free()
 ```
 One message is no longer needed Free method returns it back to the provider pool.
 
@@ -135,16 +133,16 @@ One message is no longer needed Free method returns it back to the provider pool
 Log message [support](io/stream.go) primitive and complex data structure.
 
 ```go
-    meesage.Put([]byte{`"k1":"raw data"`})
-    meesage.PutString("k2", "v2")
-    meesage.PutNonEmptyString("k2.1", v)
-    meesage.PutB64EncodedBytes("k2.2", rawData)
-    meesage.PutInt("k3", 3)
-    meesage.PutFloat("k3", 3.2)
-    meesage.PutBool("k3", false)
-    meesage.PutInts("k4", []int{1,2,3})
-    meesage.PutObject("k5", object)
-    meesage.PutObjects("k6", objects)
+meesage.Put([]byte{`"k1":"raw data"`})
+meesage.PutString("k2", "v2")
+meesage.PutNonEmptyString("k2.1", v)
+meesage.PutB64EncodedBytes("k2.2", rawData)
+meesage.PutInt("k3", 3)
+meesage.PutFloat("k3", 3.2)
+meesage.PutBool("k3", false)
+meesage.PutInts("k4", []int{1,2,3})
+meesage.PutObject("k5", object)
+meesage.PutObjects("k6", objects)
 ```
 
 ### Benchmark
