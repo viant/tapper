@@ -147,7 +147,7 @@ meesage.PutObjects("k6", objects)
 
 ### Benchmark
 
-Benchmark builds b.T 1K message with 10 attrs and writes the log stream.
+Benchmark builds b.T x 1K message with 10 attrs and writes the log stream.
 
 ```bash
 BenchmarkLogger_Log
