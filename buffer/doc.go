@@ -1,2 +1,2 @@
-// Package buffer defines logger buffer Pool
+// Package buffer defines logger buffer
 package buffer
