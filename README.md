@@ -18,8 +18,7 @@ Please refer to [`CHANGELOG.md`](CHANGELOG.md) if you encounter breaking changes
 
 The goal of this project is to provide hyper performant, zero memory allocation transaction logger,
 that can work with local and cloud file storage.
-Tapper logger allow log rotation, where each rotation can be optionally post rotation logic can be delegated to external web service
-or a shell script.
+Tapper logger allow log rotation, where on each rotation additional logic can be delegated to the external web service or a shell script.
 
 
 ### Usage
