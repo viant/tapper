@@ -47,8 +47,13 @@ func (w *writer) Close() error {
 		return nil
 	}
 	if w.rotationURL == "" {
-		return nil
+		err := w.flusher.Flush()
+		if writerCloser, ok := w.writer.(io.Closer); ok && err == nil {
+			err = writerCloser.Close()
+		}
+		return w.closer.Close()
 	}
+
 	if w.rotationPath != "" {
 		src := url.Path(w.destURL)
 		if err := os.Rename(src, w.rotationPath); err != nil {
@@ -66,6 +71,7 @@ func (w *writer) Close() error {
 func (w *writer) closeQuietly() error {
 	ctx := context.Background()
 	err := w.Flush()
+
 	if writerCloser, ok := w.writer.(io.Closer); ok && err == nil {
 		err = writerCloser.Close()
 	}
@@ -234,7 +240,6 @@ func newWriter(config *config.Stream, fs afs.Service, rotationURL string, index 
 		gzWriter := gzip.NewWriter(writerCloser)
 		result.writer = gzWriter
 		result.flusher = gzWriter
-
 	} else {
 		writer := bufio.NewWriter(writerCloser)
 		result.writer = writer
