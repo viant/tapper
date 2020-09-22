@@ -28,6 +28,9 @@ func (l *Logger) monitorWriters() {
 	for atomic.LoadInt32(&l.closed) == 0 {
 		l.mux.Lock()
 		writer := l.getWriter()
+		if writer== nil {
+			continue
+		}
 		if writer.isExpired(time.Now().Add(-5 * time.Second)) {
 			if err := writer.Flush(); err == nil {
 				err = l.rotateIfNeeded(writer, time.Now())
@@ -114,6 +117,8 @@ func New(config *config.Stream, ID string, fs afs.Service) (*Logger, error) {
 		emitter: emitter,
 	}
 	err = result.open(time.Now())
-	go result.monitorWriters()
+	if config.Rotation != nil {
+		go result.monitorWriters()
+	}
 	return result, err
 }
