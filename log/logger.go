@@ -28,7 +28,7 @@ func (l *Logger) monitorWriters() {
 	for atomic.LoadInt32(&l.closed) == 0 {
 		l.mux.Lock()
 		writer := l.getWriter()
-		if writer== nil {
+		if writer == nil {
 			continue
 		}
 		if writer.isExpired(time.Now().Add(-5 * time.Second)) {

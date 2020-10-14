@@ -3,9 +3,9 @@ package msg
 import (
 	"encoding/base64"
 	"github.com/viant/tapper/buffer"
-	io2 "github.com/viant/tapper/io"
+	"github.com/viant/tapper/io"
 	"github.com/viant/toolbox"
-	"io"
+	iow "io"
 )
 
 //Message represents transaction message
@@ -52,7 +52,7 @@ func (m *Message) PutB64EncodedBytes(key string, bytes []byte) {
 }
 
 //PutObject put encoded object
-func (m *Message) PutObject(key string, object io2.Encoder) {
+func (m *Message) PutObject(key string, object io.Encoder) {
 	m.key(key)
 	m.Begin()
 	object.Encode(m)
@@ -61,7 +61,7 @@ func (m *Message) PutObject(key string, object io2.Encoder) {
 }
 
 //PutObjects put objects
-func (m *Message) PutObjects(key string, objects []io2.Encoder) {
+func (m *Message) PutObjects(key string, objects []io.Encoder) {
 	m.key(key)
 	m.Put([]byte("["))
 	for i, object := range objects {
@@ -158,7 +158,7 @@ func (m *Message) PutBool(key string, value bool) {
 }
 
 //WriteTo writes message to the writer
-func (m *Message) WriteTo(w io.Writer) (int64, error) {
+func (m *Message) WriteTo(w iow.Writer) (int64, error) {
 	m.end()
 	return m.bs.WriteTo(w)
 }

@@ -7,6 +7,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/viant/afs"
 	"github.com/viant/afs/file"
+	"github.com/viant/afs/option"
+	"github.com/viant/afs/storage"
 	"github.com/viant/afs/url"
 	"github.com/viant/tapper/config"
 	"github.com/viant/tapper/emitter"
@@ -219,7 +221,13 @@ func (w *writer) initRotation(rotation *config.Rotation, created time.Time, emit
 
 //NewWriter creates a writer
 func newWriter(config *config.Stream, fs afs.Service, rotationURL string, index int, created time.Time, emitter *emitter.Service) (*writer, error) {
-	writerCloser, err := fs.NewWriter(context.Background(), config.URL, file.DefaultFileOsMode)
+
+	var options = make([]storage.Option, 0)
+	if config.StreamUpload {
+		options = append(options, option.NewSkipChecksum(true))
+	}
+
+	writerCloser, err := fs.NewWriter(context.Background(), config.URL, file.DefaultFileOsMode, options...)
 	if err != nil {
 		return nil, err
 	}
