@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+//Format url format
 type Format struct {
 	timeStartIndex int
 	timeEndIndex   int
@@ -13,10 +14,9 @@ type Format struct {
 }
 
 func (r *Format) Init(URL string) {
-	r.timeLayout = URL
 	r.timeEndIndex = strings.Index(URL, "]")
 	r.timeStartIndex = strings.Index(URL, "[")
-	if r.timeStartIndex != -1 && r.timeEndIndex == -1 {
+	if r.timeStartIndex != -1 && r.timeEndIndex != -1 {
 		timeTemplate := URL[r.timeStartIndex+1 : r.timeEndIndex]
 		r.timeLayout = toolbox.DateFormatToLayout(timeTemplate)
 	}

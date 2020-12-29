@@ -11,9 +11,10 @@ type Stream struct {
 	Rotation     *Rotation
 	FlushMod     int    //flush module to be set only for local testing
 	URL          string //destination URL
-	timeLayout     string
+	timeLayout   string
 	Codec        string //compression codec
-	StreamUpload bool //streams controls progressive upload to s3, g3 (skip checkup)
+	StreamUpload bool   //streams controls progressive upload to s3, g3 (skip checkup)
+	format *Format
 }
 
 //IsGzip returns true if gzip codec specified
@@ -25,11 +26,10 @@ func (s *Stream) IsGzip() bool {
 func (s *Stream) Init() {
 	if s.Rotation != nil {
 		s.Rotation.Init()
-	}
-	formatted := &Format{}
-	formatted.Init(s.URL)
-	if s.Rotation == nil {
-		s.URL = formatted.ExpandURL(time.Now(), s.URL)
+	} else if s.format == nil {
+		s.format = &Format{}
+		s.format.Init(s.URL)
+		s.URL = s.format.ExpandURL(time.Now(), s.URL)
 	}
 	if s.IsGzip() && !strings.HasSuffix(s.URL, ".gz") {
 		s.URL += ".gz"
