@@ -117,6 +117,9 @@ func New(config *config.Stream, ID string, fs afs.Service) (*Logger, error) {
 		emitter: emitter,
 	}
 	err = result.open(time.Now())
+	if err != nil {
+		return nil, err
+	}
 	if config.Rotation != nil {
 		go result.monitorWriters()
 	}

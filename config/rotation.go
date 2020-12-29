@@ -2,24 +2,25 @@ package config
 
 import (
 	"fmt"
-	"github.com/viant/toolbox"
 	"strings"
 	"sync/atomic"
 	"time"
 )
 
+
+
+
 //Rotation rotation rotation config
 type Rotation struct {
 	EveryMs        int
 	MaxEntries     int
-	URL            string
+	Format
+	URL string
 	Codec          string
 	Emit           *Event
 	url            string
 	hasSeq         bool
-	timeStartIndex int
-	timeEndIndex   int
-	timeLayout     string
+
 	sequence       int32
 }
 
@@ -30,14 +31,8 @@ func (r *Rotation) IsGzip() bool {
 
 //Init initialises rotation
 func (r *Rotation) Init() {
+	r.Format.Init(r.URL)
 	r.hasSeq = strings.Contains(r.URL, "%")
-	r.timeLayout = r.URL
-	r.timeEndIndex = strings.Index(r.URL, "]")
-	r.timeStartIndex = strings.Index(r.URL, "[")
-	if r.timeStartIndex != -1 && r.timeEndIndex == -1 {
-		timeTemplate := r.URL[r.timeStartIndex+1 : r.timeEndIndex]
-		r.timeLayout = toolbox.DateFormatToLayout(timeTemplate)
-	}
 	if r.Emit != nil {
 		r.Emit.Init()
 	}
@@ -52,9 +47,9 @@ func (r Rotation) ExpiryTime(created time.Time) *time.Time {
 	return &expiry
 }
 
-//ExpandURL expand rotation URL with log sequence,  time and ID
+//ExpandURL expand rotation Format with log sequence,  time and ID
 func (r *Rotation) ExpandURL(t time.Time, ID string) string {
-	URL := r.URL
+	URL := r.Format.ExpandURL(t, r.URL)
 	if r.timeEndIndex > 0 {
 		timeValue := t.Format(r.timeLayout)
 		URL = r.URL[:r.timeStartIndex] + timeValue + r.URL[r.timeEndIndex+1:]

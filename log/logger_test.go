@@ -47,7 +47,7 @@ func TestLogger_Log(t *testing.T) {
 				Rotation: &config.Rotation{
 					EveryMs:    0,
 					MaxEntries: 1000,
-					URL:        "/tmp/tapper-rtest-%v",
+					URL:     "/tmp/tapper-rtest-%v",
 				},
 				FlushMod: 100,
 				URL:      "/tmp/tapper-rtest",
@@ -63,7 +63,7 @@ func TestLogger_Log(t *testing.T) {
 				Rotation: &config.Rotation{
 					EveryMs:    0,
 					MaxEntries: 1000,
-					URL:        "/tmp/tapper-rtest-%v",
+					URL:     "/tmp/tapper-rtest-%v",
 					Codec:      "gzip",
 				},
 				FlushMod: 100,
@@ -82,12 +82,12 @@ func TestLogger_Log(t *testing.T) {
 				Rotation: &config.Rotation{
 					EveryMs:    0,
 					MaxEntries: 1000,
-					URL:        "/tmp/emitter/tapper-rtest-%v",
+					URL:     "/tmp/emitter/tapper-rtest-%v",
 					Emit: &config.Event{
 						URL: "http://127.0.0.1:8199",
 						Params: map[string]string{
 							"Path": "$DestPath",
-							"URL":  "$Dest",
+							"Format":  "$Dest",
 							"Name": "$DestName",
 							"Time": "$TimePath",
 						},
@@ -103,7 +103,7 @@ func TestLogger_Log(t *testing.T) {
 			expectEmitterParams: map[string]string{
 				"Name": "tapper-rtest-127_0_0_1-0",
 				"Path": "/tmp/emitter/tapper-rtest-127_0_0_1-0",
-				"URL":  "/tmp/emitter/tapper-rtest-127_0_0_1-0",
+				"Format":  "/tmp/emitter/tapper-rtest-127_0_0_1-0",
 			},
 		},
 
@@ -113,13 +113,13 @@ func TestLogger_Log(t *testing.T) {
 				Rotation: &config.Rotation{
 					EveryMs:    0,
 					MaxEntries: 1000,
-					URL:        "/tmp/cemitter/tapper-rtest-%v",
+					URL:     "/tmp/cemitter/tapper-rtest-%v",
 					Codec:      "gzip",
 					Emit: &config.Event{
 						URL: "http://127.0.0.1:8198",
 						Params: map[string]string{
 							"Path": "$DestPath",
-							"URL":  "$Dest",
+							"Format":  "$Dest",
 							"Name": "$DestName",
 							"Time": "$TimePath",
 						},
@@ -136,7 +136,7 @@ func TestLogger_Log(t *testing.T) {
 			expectEmitterParams: map[string]string{
 				"Name": "tapper-rtest-127_0_0_1-0.gz",
 				"Path": "/tmp/cemitter/tapper-rtest-127_0_0_1-0.gz",
-				"URL":  "/tmp/cemitter/tapper-rtest-127_0_0_1-0.gz",
+				"Format":  "/tmp/cemitter/tapper-rtest-127_0_0_1-0.gz",
 			},
 		},
 	}
@@ -266,7 +266,7 @@ func BenchmarkLogger_Log_Rotation(b *testing.B) {
 		Rotation: &config.Rotation{
 			EveryMs:    0,
 			MaxEntries: 1000,
-			URL:        "/tmp/tapper_bench_rotation-%v.log",
+			URL:     "/tmp/tapper_bench_rotation-%v.log",
 		},
 	}
 	testConcurrently(b, cfg)

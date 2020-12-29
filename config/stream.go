@@ -1,6 +1,9 @@
 package config
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 //Stream represents log stream
 type Stream struct {
@@ -8,6 +11,7 @@ type Stream struct {
 	Rotation     *Rotation
 	FlushMod     int    //flush module to be set only for local testing
 	URL          string //destination URL
+	timeLayout     string
 	Codec        string //compression codec
 	StreamUpload bool //streams controls progressive upload to s3, g3 (skip checkup)
 }
@@ -21,6 +25,11 @@ func (s *Stream) IsGzip() bool {
 func (s *Stream) Init() {
 	if s.Rotation != nil {
 		s.Rotation.Init()
+	}
+	formatted := &Format{}
+	formatted.Init(s.URL)
+	if s.Rotation == nil {
+		s.URL = formatted.ExpandURL(time.Now(), s.URL)
 	}
 	if s.IsGzip() && !strings.HasSuffix(s.URL, ".gz") {
 		s.URL += ".gz"

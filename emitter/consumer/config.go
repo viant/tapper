@@ -26,12 +26,12 @@ func (c Config) Validate() error {
 	return nil
 }
 
-//NewConfigFromURL creates a config from URL
+//NewConfigFromURL creates a config from Format
 func NewConfigFromURL(URL string) (*Config, error) {
 	fs := afs.New()
 	reader, err := fs.OpenURL(context.Background(), URL)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to open config URL: %v", URL)
+		return nil, errors.Wrapf(err, "failed to open config Format: %v", URL)
 	}
 	defer reader.Close()
 	YAML := map[string]interface{}{}

@@ -12,9 +12,10 @@ func ExampleLogger_Log() {
 
 	cfg := &config.Stream{
 		URL: "/tmp/logfile.log",
+		Codec: "gzip",
 		Rotation: &config.Rotation{
 			EveryMs: 100,
-			URL:     "/tmp/logfile.log.[yyyyMMdd_HH]-%v",
+			URL:  "/tmp/logfile.log.[yyyyMMdd_HH]-%v",
 		},
 	}
 	logger, err := log.New(cfg, "myID", afs.New())
