@@ -50,10 +50,6 @@ func (r Rotation) ExpiryTime(created time.Time) *time.Time {
 //ExpandURL expand rotation Format with log sequence,  time and ID
 func (r *Rotation) ExpandURL(t time.Time, ID string) string {
 	URL := r.Format.ExpandURL(t, r.URL)
-	if r.timeEndIndex > 0 {
-		timeValue := t.Format(r.timeLayout)
-		URL = r.URL[:r.timeStartIndex] + timeValue + r.URL[r.timeEndIndex+1:]
-	}
 	if !r.hasSeq {
 		return URL
 	}
