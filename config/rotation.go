@@ -18,7 +18,7 @@ type Rotation struct {
 	URL string
 	Codec          string
 	Emit           *Event
-	url            string
+	rawURL            string
 	hasSeq         bool
 
 	sequence       int32
@@ -53,11 +53,11 @@ func (r *Rotation) ExpandURL(t time.Time, ID string) string {
 	if !r.hasSeq {
 		return URL
 	}
-	if r.url == URL {
+	if r.rawURL == URL {
 		atomic.AddInt32(&r.sequence, 1)
 	} else {
 		atomic.StoreInt32(&r.sequence, 0)
 	}
-	r.url = URL
+	r.rawURL = URL
 	return fmt.Sprintf(URL, fmt.Sprintf("%v-%v", ID, atomic.LoadInt32(&r.sequence)))
 }
