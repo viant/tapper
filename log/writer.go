@@ -49,6 +49,9 @@ func (w *writer) Close() error {
 		return nil
 	}
 	if w.rotationURL == "" {
+		if w.count == 0 {
+			return nil
+		}
 		err := w.flusher.Flush()
 		if writerCloser, ok := w.writer.(io.Closer); ok && err == nil {
 			err = writerCloser.Close()
