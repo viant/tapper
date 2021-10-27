@@ -77,7 +77,10 @@ func (w *writer) closeQuietly() error {
 	if writerCloser, ok := w.writer.(io.Closer); ok && err == nil {
 		err = writerCloser.Close()
 	}
-	if err == nil {
+	if err == nil  {
+		if w.count == 0 {
+			return nil
+		}
 		if err = w.closer.Close(); err == nil {
 			if w.config.Rotation.IsGzip() {
 				if err = w.compress(ctx); err != nil {
