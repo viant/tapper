@@ -130,8 +130,7 @@ func (w *writer) transferToDestURL(ctx context.Context) error {
 	if rotation.IsGzip() {
 		return nil
 	}
-	fs := w.fs
-	reader, err := fs.OpenURL(ctx, w.rotationPath)
+	reader, err := w.fs.OpenURL(ctx, w.rotationPath)
 	if err != nil {
 		return err
 	}

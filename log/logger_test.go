@@ -7,7 +7,6 @@ import (
 	"github.com/viant/afs"
 	"github.com/viant/afs/file"
 	"github.com/viant/afs/url"
-	_ "github.com/viant/afsc/gs"
 	"github.com/viant/tapper/config"
 	"github.com/viant/tapper/log"
 	"github.com/viant/tapper/msg"
@@ -146,7 +145,7 @@ func TestLogger_Log(t *testing.T) {
 	}
 	fs := afs.New()
 	ctx := context.Background()
-	for _, useCae := range useCases[0:1] {
+	for _, useCae := range useCases {
 
 		if useCae.rotation != "" {
 			parent, _ := url.Split(useCae.rotation, file.Scheme)
@@ -302,12 +301,12 @@ func BenchmarkLogger_Log(b *testing.B) {
 
 //BenchmarkLogger_Log_Rotation-16    	  409687	      2793 ns/op	       2 B/op	       0 allocs/op
 func BenchmarkLogger_Log_Rotation(b *testing.B) {
-	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS","/xxxxx/viant-e2e.json")
+	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS","/xxxxx/xxxx.json")
 	cfg := &config.Stream{
 		URL: "/tmp/tapper_bench_rotation-$UUID.log",
 		Rotation: &config.Rotation{
 			EveryMs:    10000000,
-			URL:     "gs://viant-e2e/test/tapper_bench_rotation-$UUID-%v.log",
+			URL:     "gs://xxxx/test/tapper_bench_rotation-$UUID-%v.log",
 			Codec: "gzip",
 		},
 	}
