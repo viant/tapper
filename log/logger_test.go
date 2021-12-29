@@ -7,12 +7,16 @@ import (
 	"github.com/viant/afs"
 	"github.com/viant/afs/file"
 	"github.com/viant/afs/url"
+	_ "github.com/viant/afsc/gs"
 	"github.com/viant/tapper/config"
 	"github.com/viant/tapper/log"
 	"github.com/viant/tapper/msg"
 	"github.com/viant/toolbox"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -142,7 +146,7 @@ func TestLogger_Log(t *testing.T) {
 	}
 	fs := afs.New()
 	ctx := context.Background()
-	for _, useCae := range useCases {
+	for _, useCae := range useCases[0:1] {
 
 		if useCae.rotation != "" {
 			parent, _ := url.Split(useCae.rotation, file.Scheme)
@@ -251,26 +255,8 @@ func newTestServer(port string) *testServer {
 	return result
 }
 
-func BenchmarkLogger_Log(b *testing.B) {
-	toolbox.RemoveFileIfExist("/tmp/tapper_bench.log")
-	cfg := &config.Stream{
-		URL: "/tmp/tapper_bench.log",
-	}
-	testConcurrently(b, cfg)
-}
 
-func BenchmarkLogger_Log_Rotation(b *testing.B) {
-	toolbox.RemoveFileIfExist("/tmp/tapper_bench_rotation.log")
-	cfg := &config.Stream{
-		URL: "/tmp/tapper_bench_rotation.log",
-		Rotation: &config.Rotation{
-			EveryMs:    0,
-			MaxEntries: 1000,
-			URL:     "/tmp/tapper_bench_rotation-%v.log",
-		},
-	}
-	testConcurrently(b, cfg)
-}
+
 
 func testConcurrently(b *testing.B, cfg *config.Stream) {
 	messages := msg.NewProvider(2048, 1024)
@@ -279,7 +265,7 @@ func testConcurrently(b *testing.B, cfg *config.Stream) {
 		b.Log(err)
 	}
 	b.ResetTimer()
-	data := strings.Repeat("?", 128)
+	data := strings.Repeat("?", 1000)
 	b.RunParallel(func(pb *testing.PB) {
 		b.ReportAllocs()
 		for pb.Next() {
@@ -302,3 +288,125 @@ func testConcurrently(b *testing.B, cfg *config.Stream) {
 	})
 	logger.Close()
 }
+
+
+//BenchmarkLogger_Log-16    	  198816	      5329 ns/op	       4 B/op	       0 allocs/op
+func BenchmarkLogger_Log(b *testing.B) {
+	toolbox.RemoveFileIfExist("/tmp/tapper_bench.log")
+	cfg := &config.Stream{
+		URL: "/tmp/tapper_bench.log",
+		Codec: "gzip",
+	}
+	testRotationConcurrently(b, cfg)
+}
+
+//BenchmarkLogger_Log_Rotation-16    	  409687	      2793 ns/op	       2 B/op	       0 allocs/op
+func BenchmarkLogger_Log_Rotation(b *testing.B) {
+	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS","/xxxxx/viant-e2e.json")
+	cfg := &config.Stream{
+		URL: "/tmp/tapper_bench_rotation-$UUID.log",
+		Rotation: &config.Rotation{
+			EveryMs:    10000000,
+			URL:     "gs://viant-e2e/test/tapper_bench_rotation-$UUID-%v.log",
+			Codec: "gzip",
+		},
+	}
+	testRotationConcurrently(b, cfg)
+}
+
+func testRotationConcurrently(b *testing.B, cfg *config.Stream) {
+	messages := msg.NewProvider(2048, 1024)
+	logger, err := log.New(cfg, "xx", afs.New())
+	if !assert.Nil(b, err) {
+		b.Log(err)
+	}
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		b.ReportAllocs()
+		for pb.Next() {
+			message := messages.NewMessage()
+			message.PutString("524", randStr[0])
+			message.PutString("525", randStr[1])
+			message.PutString("526", randStr[2])
+			message.PutString("590", randStr[3])
+			message.PutString("610", randStr[4])
+			message.PutString("620", randStr[5])
+			message.PutString("630", randStr[6])
+			message.PutString("650", randStr[7])
+			message.PutString("900", randStr[8])
+			message.PutString("1000", randStr[9])
+			err = logger.Log(message)
+			assert.Nil(b, err)
+			message.Free()
+		}
+	})
+	logger.Close()
+	time.Sleep(5*time.Second)
+}
+
+var randStr = make([]string,10)
+
+func init() {
+	for i := 0 ; i < 10 ; i++ {
+		randStr[i] = RandString()
+	}
+}
+
+
+func RandString() string {
+	b := make([]string,10)
+	for i := range b {
+		rand.Seed(time.Now().UnixNano())
+		b[i] = strconv.Itoa(rand.Intn(555*(i+1)))
+	}
+	return "["+strings.Join(b,",")+"]"
+}
+
+
+func TestFileRename(t *testing.T) {
+	cfg := &config.Stream{
+		URL: "/tmp/tapper_bench_rotation.log",
+		Rotation: &config.Rotation{
+			EveryMs:    20000,
+//			MaxEntries: 2,
+			URL:     "/tmp/tapper_bench_rotation-%v.log",
+			Codec: "gzip",
+		},
+	}
+	messages := msg.NewProvider(2048, 1024)
+	logger, err := log.New(cfg, "xx", afs.New())
+	message := messages.NewMessage()
+	message.PutString("524", randStr[0])
+	message.PutString("525", randStr[1])
+	message.PutString("526", randStr[2])
+	message.PutString("590", randStr[3])
+	message.PutString("610", randStr[4])
+	message.PutString("620", randStr[5])
+	message.PutString("630", randStr[6])
+	message.PutString("650", randStr[7])
+	message.PutString("900", randStr[8])
+	message.PutString("1000", randStr[9])
+	err = logger.Log(message)
+	assert.Nil(t, err)
+	message.Free()
+	time.Sleep(2*time.Second)
+	message.PutString("524", randStr[0])
+	message.PutString("525", randStr[1])
+	message.PutString("526", randStr[2])
+	message.PutString("590", randStr[3])
+	message.PutString("610", randStr[4])
+	message.PutString("620", randStr[5])
+	message.PutString("630", randStr[6])
+	message.PutString("650", randStr[7])
+	message.PutString("900", randStr[8])
+	message.PutString("1000", randStr[9])
+	err = logger.Log(message)
+	assert.Nil(t, err)
+	message.Free()
+	logger.Close()
+	time.Sleep(5*time.Second)
+}
+
+
+
+
