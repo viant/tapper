@@ -90,6 +90,9 @@ func (w *writer) closeQuietly() error {
 	}
 	if err == nil {
 		if w.count == 0 {
+			if w.rotationPath != "" {
+				w.fs.Delete(ctx,w.rotationPath)
+			}
 			return nil
 		}
 		if err = w.closer.Close(); err == nil {
