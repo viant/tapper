@@ -41,6 +41,7 @@ type writer struct {
 	writer           io.Writer
 	config           *config.Stream
 	fs               afs.Service
+	loggerClose      bool
 }
 
 //Close closes this writer
@@ -65,6 +66,13 @@ func (w *writer) Close() error {
 			return errors.Wrapf(err, "failed to rename: %v to %v", src, w.rotationPath)
 		}
 	}
+	if w.loggerClose {
+		if err := w.closeQuietly(); err != nil {
+			 log.Print(err)
+			 return err
+		}
+		return nil
+	}
 	go func() {
 		if err := w.closeQuietly(); err != nil {
 			log.Print(err)
@@ -80,8 +88,11 @@ func (w *writer) closeQuietly() error {
 	if writerCloser, ok := w.writer.(io.Closer); ok && err == nil {
 		err = writerCloser.Close()
 	}
-	if err == nil  {
+	if err == nil {
 		if w.count == 0 {
+			if w.rotationPath != "" {
+				w.fs.Delete(ctx,w.rotationPath)
+			}
 			return nil
 		}
 		if err = w.closer.Close(); err == nil {

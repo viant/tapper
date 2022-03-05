@@ -48,6 +48,7 @@ func (l *Logger) Close() (err error) {
 		if writer == nil {
 			continue
 		}
+		writer.loggerClose = true
 		if e := writer.Close(); e != nil {
 			err = e
 		}
