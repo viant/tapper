@@ -5,6 +5,7 @@ import (
 	"github.com/viant/tapper/config"
 	"github.com/viant/tapper/log"
 	"github.com/viant/tapper/msg"
+	"github.com/viant/tapper/msg/json"
 	slog "log"
 )
 
@@ -22,7 +23,7 @@ func ExampleLogger_Log() {
 	if err != nil {
 		slog.Fatal(err)
 	}
-	provider := msg.NewProvider(2048, 32)
+	provider := msg.NewProvider(2048, 32,json.New)
 
 	for i := 0; i < 100; i++ {
 		message := provider.NewMessage()
