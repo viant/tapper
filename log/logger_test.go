@@ -10,6 +10,8 @@ import (
 	"github.com/viant/tapper/config"
 	"github.com/viant/tapper/log"
 	"github.com/viant/tapper/msg"
+	"github.com/viant/tapper/msg/csv"
+	"github.com/viant/tapper/msg/json"
 	"github.com/viant/toolbox"
 	"io/ioutil"
 	"math/rand"
@@ -164,7 +166,7 @@ func TestLogger_Log(t *testing.T) {
 			time.Sleep(100 * time.Millisecond)
 		}
 
-		provider := msg.NewProvider(useCae.bufferSize, useCae.poolSize)
+		provider := msg.NewProvider(useCae.bufferSize, useCae.poolSize,json.New)
 		logger, err := log.New(useCae.config, "127.0.0.1", fs)
 		if !assert.Nil(t, err) {
 			return
@@ -258,7 +260,7 @@ func newTestServer(port string) *testServer {
 
 
 func testConcurrently(b *testing.B, cfg *config.Stream) {
-	messages := msg.NewProvider(2048, 1024)
+	messages := msg.NewProvider(2048, 1024,json.New)
 	logger, err := log.New(cfg, "xx", afs.New())
 	if !assert.Nil(b, err) {
 		b.Log(err)
@@ -314,7 +316,7 @@ func BenchmarkLogger_Log_Rotation(b *testing.B) {
 }
 
 func testRotationConcurrently(b *testing.B, cfg *config.Stream) {
-	messages := msg.NewProvider(2048, 1024)
+	messages := msg.NewProvider(2048, 1024,json.New)
 	logger, err := log.New(cfg, "xx", afs.New())
 	if !assert.Nil(b, err) {
 		b.Log(err)
@@ -340,7 +342,7 @@ func testRotationConcurrently(b *testing.B, cfg *config.Stream) {
 		}
 	})
 	logger.Close()
-	time.Sleep(5*time.Second)
+//	time.Sleep(5*time.Second)
 }
 
 var randStr = make([]string,10)
@@ -361,18 +363,27 @@ func RandString() string {
 	return "["+strings.Join(b,",")+"]"
 }
 
+func RandStringSlice() []string {
+	b := make([]string,10)
+	for i := range b {
+		rand.Seed(time.Now().UnixNano())
+		b[i] = strconv.Itoa(rand.Intn(555*(i+1)))
+	}
+	return b
+}
+
 
 func TestFileRename(t *testing.T) {
 	cfg := &config.Stream{
-		URL: "/tmp/tapper_bench_rotation.log",
+		URL: "/tmp/tapper_bench_rotation_json.log",
 		Rotation: &config.Rotation{
 			EveryMs:    20000,
 //			MaxEntries: 2,
-			URL:     "/tmp/tapper_bench_rotation-%v.log",
+			URL:     "/tmp/tapper_bench_rotation_json-%v.log",
 			Codec: "gzip",
 		},
 	}
-	messages := msg.NewProvider(2048, 1024)
+	messages := msg.NewProvider(2048, 1024,json.New)
 	logger, err := log.New(cfg, "xx", afs.New())
 	message := messages.NewMessage()
 	message.PutString("524", randStr[0])
@@ -399,6 +410,45 @@ func TestFileRename(t *testing.T) {
 	message.PutString("650", randStr[7])
 	message.PutString("900", randStr[8])
 	message.PutString("1000", randStr[9])
+	err = logger.Log(message)
+	assert.Nil(t, err)
+	message.Free()
+	logger.Close()
+	time.Sleep(5*time.Second)
+}
+
+func TestFileRenameWithCsv(t *testing.T) {
+	cfg := &config.Stream{
+		URL: "/tmp/tapper_bench_csv_rotation.log",
+		Rotation: &config.Rotation{
+			EveryMs:    20000,
+			//			MaxEntries: 2,
+			URL:     "/tmp/tapper_bench_csv_rotation-%v.log",
+			Codec: "gzip",
+		},
+	}
+	messages := msg.NewProvider(2048, 1024,csv.New)
+	logger, err := log.New(cfg, "xx", afs.New())
+	message := messages.NewMessage()
+//	message.UseQuotes(true)
+	message.PutString("", "string")
+	message.PutStrings("525",RandStringSlice())
+	message.PutInt("", rand.Int())
+	message.PutInts("", rand.Perm(10))
+	message.PutFloat("", rand.Float64())
+	message.PutString("", "string100")
+	message.PutBool("",true)
+	err = logger.Log(message)
+	assert.Nil(t, err)
+	message.Free()
+	time.Sleep(2*time.Second)
+	message.PutString("", "string")
+	message.PutStrings("",RandStringSlice())
+	message.PutInt("", rand.Int())
+	message.PutInts("", rand.Perm(10))
+	message.PutFloat("", rand.Float64())
+	message.PutString("", "string100")
+	message.PutBool("",true)
 	err = logger.Log(message)
 	assert.Nil(t, err)
 	message.Free()

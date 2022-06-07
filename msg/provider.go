@@ -3,8 +3,8 @@ package msg
 import (
 	"github.com/viant/tapper/buffer"
 	"sync"
-	"sync/atomic"
 )
+
 
 //Provider represents a message provider
 type Provider struct {
@@ -13,36 +13,32 @@ type Provider struct {
 }
 
 //NewMessage creates a message
-func (p *Provider) NewMessage() *Message {
-	message := p.pool.Get().(*Message)
-	atomic.StoreInt32(&message.borrowed, 1)
+func (p *Provider) NewMessage() Message {
+	message := p.pool.Get().(Message)
+	message.SetBorrowed()
 	message.Begin()
 	return message
 }
 
-func (p *Provider) put(m *Message) {
-	if !atomic.CompareAndSwapInt32(&m.borrowed, 1, 0) {
+func (p *Provider) Put(m Message) {
+	if !m.CompareAndSwap() {
 		return
 	}
-	m.bs.Reset()
+	m.GetByteBuffer().Reset()
 	p.pool.Put(m)
 }
 
 //NewProvider creates a message provider with supplied buffer size and pool size
-func NewProvider(messageSize, concurrency int) *Provider {
+func NewProvider(messageSize, concurrency int, newMessage func(provider *Provider,  bytes *buffer.Bytes) Message) *Provider {
 	provider := &Provider{
 		bufferSize: messageSize,
 		pool:       &sync.Pool{},
 	}
 	provider.pool.New = func() interface{} {
-		return &Message{
-			bs:       buffer.NewBytes(messageSize),
-			provider: provider,
-		}
+		return newMessage(provider, buffer.NewBytes(messageSize))
 	}
-
 	for i := 0; i < concurrency; i++ {
-		provider.put(provider.NewMessage())
+		provider.Put(provider.NewMessage())
 	}
 	return provider
 }

@@ -74,7 +74,7 @@ func (l *Logger) getWriter() *writer {
 }
 
 //Log logs a message
-func (l *Logger) Log(message *msg.Message) (err error) {
+func (l *Logger) Log(message msg.Message) (err error) {
 	now := time.Now()
 	l.mux.Lock()
 	defer l.mux.Unlock()
@@ -91,6 +91,8 @@ func (l *Logger) Log(message *msg.Message) (err error) {
 	}
 	return err
 }
+
+
 
 func (l *Logger) rotateIfNeeded(writer *writer, now time.Time) (err error) {
 	if writer.isMaxReached() || writer.isExpired(now) {
