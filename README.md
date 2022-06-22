@@ -119,15 +119,14 @@ Rotation:
 ### Messages
 
 To reduce log message memory overhead, a message can be created by [Provider](msg/provider.go), which 
-handles data pooling. You can create a log message with the following snippet.
-
+handles data pooling. You can create a log message with the following snippet using json format.
 ```go
-provider := msg.NewProvider(avgMessageSize, concurrency)
+provider := msg.NewProvider(avgMessageSize, concurrency, json.New) 
 message := provider.NewMessage()
 defer message.Free()
 ```
-One message is no longer needed Free method returns it back to the provider pool.
 
+One message is no longer needed Free method returns it back to the provider pool.
 
 Log message [support](io/stream.go) primitive and complex data structure.
 
@@ -143,6 +142,15 @@ meesage.PutInts("k4", []int{1,2,3})
 meesage.PutObject("k5", object)
 meesage.PutObjects("k6", objects)
 ```
+
+Message Provider also support CSV type . In this case, the message provider constructor takes CSV message type. 
+
+```go
+provider := msg.NewProvider(avgMessageSize, concurrency, csv.New)
+message := provider.NewMessage()
+defer message.Free()
+```
+Only primitive and slice data types are supported in CSV message. 
 
 ### Benchmark
 
