@@ -150,7 +150,7 @@ provider := msg.NewProvider(avgMessageSize, concurrency, csv.New)
 message := provider.NewMessage()
 defer message.Free()
 ```
-Only primitive and slice data types are supported in CSV format. 
+Only primitive and slice data types are supported in CSV message. 
 
 ### Benchmark
 
