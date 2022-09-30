@@ -134,9 +134,33 @@ func (m *Message) PutFloat(key string, value float64) {
 
 }
 
+//PutFloats put key and float slice
+func (m *Message) PutFloats(key string, values []float64) {
+	for i, value := range values {
+		if i > 0 {
+			m.bs.AppendFloat(value, 64)
+			m.Put([]byte(m.getSliceDelimiter()))
+		}
+	}
+	m.bs.Trim(m.getSliceDelimiter()[0])
+	m.next()
+}
+
 //PutBool put key and bool value
 func (m *Message) PutBool(key string, value bool) {
 	m.PutString(key, toolbox.AsString(value))
+}
+
+//PutFloats put key and bool slice
+func (m *Message) PutBools(key string, values []bool) {
+	for i, value := range values {
+		if i > 0 {
+			m.PutString(key, toolbox.AsString(value))
+			m.Put([]byte(m.getSliceDelimiter()))
+		}
+	}
+	m.bs.Trim(m.getSliceDelimiter()[0])
+	m.next()
 }
 
 //WriteTo writes CsvMessage to the writer
@@ -164,7 +188,7 @@ func (m *Message) SetBorrowed() {
 	atomic.StoreInt32(&m.borrowed, 1)
 }
 
-func (m *Message) CompareAndSwap() bool{
+func (m *Message) CompareAndSwap() bool {
 	return atomic.CompareAndSwapInt32(&m.borrowed, 1, 0)
 }
 
@@ -189,11 +213,9 @@ func (m *Message) UseQuotes(quote bool) {
 	m.useQuote = quote
 }
 
-func New(provider *msg.Provider,  bytes *buffer.Bytes) msg.Message {
+func New(provider *msg.Provider, bytes *buffer.Bytes) msg.Message {
 	return &Message{
 		bs:       bytes,
 		provider: provider,
 	}
 }
-
-

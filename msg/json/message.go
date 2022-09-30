@@ -152,10 +152,38 @@ func (m *Message) PutFloat(key string, value float64) {
 
 }
 
+//PutFloats put key and float values
+func (m *Message) PutFloats(key string, values []float64) {
+	m.key(key)
+	m.Put([]byte("["))
+	for i, value := range values {
+		if i > 0 {
+			m.next()
+		}
+		m.bs.AppendFloat(value, 64)
+	}
+	m.Put([]byte("]"))
+	m.next()
+}
+
 //PutBool put key and bool value
 func (m *Message) PutBool(key string, value bool) {
 	m.key(key)
 	m.bs.AppendBool(value)
+	m.next()
+}
+
+//PutBools put key and bool values
+func (m *Message) PutBools(key string, values []bool) {
+	m.key(key)
+	m.Put([]byte("["))
+	for i, value := range values {
+		if i > 0 {
+			m.next()
+		}
+		m.bs.AppendBool(value)
+	}
+	m.Put([]byte("]"))
 	m.next()
 }
 
@@ -185,7 +213,7 @@ func (m *Message) SetBorrowed() {
 	atomic.StoreInt32(&m.borrowed, 1)
 }
 
-func (m *Message) CompareAndSwap() bool{
+func (m *Message) CompareAndSwap() bool {
 	return atomic.CompareAndSwapInt32(&m.borrowed, 1, 0)
 }
 
@@ -202,7 +230,7 @@ func (m *Message) UseQuotes(quote bool) {
 	return
 }
 
-func New(provider *msg.Provider,  bytes *buffer.Bytes) msg.Message {
+func New(provider *msg.Provider, bytes *buffer.Bytes) msg.Message {
 	return &Message{
 		bs:       bytes,
 		provider: provider,

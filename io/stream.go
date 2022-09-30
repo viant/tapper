@@ -26,6 +26,10 @@ type Stream interface {
 	PutInt(key string, value int)
 	//PutFloat puts float
 	PutFloat(key string, value float64)
+	//PutFloat64s puts uint slice
+	PutFloats(key string, values []float64)
 	//PutBool puts bool
 	PutBool(key string, value bool)
+	//PutBools puts bool
+	PutBools(key string, value []bool)
 }
