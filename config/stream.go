@@ -1,7 +1,9 @@
 package config
 
 import (
+	"math/rand"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -14,7 +16,24 @@ type Stream struct {
 	timeLayout   string
 	Codec        string //compression codec
 	StreamUpload bool   //streams controls progressive upload to s3, g3 (skip checkup)
-	format *Format
+	format       *Format
+	SamplePct    *float64 //sample pct (0..100)
+	mux          sync.Mutex
+	sampler      *rand.Rand
+}
+
+//CanSample returns true if sample pct is not configured or sample random value meets target
+func (s *Stream) CanSample() bool {
+	if s.SamplePct == nil || *s.SamplePct == 100 {
+		return true
+	}
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	if s.sampler == nil {
+		s.sampler = rand.New(rand.NewSource(time.Now().UnixNano()))
+	}
+	target := s.sampler.Float64()
+	return (target * 100) < *s.SamplePct
 }
 
 //IsGzip returns true if gzip codec specified
