@@ -60,6 +60,12 @@ func New(value interface{}) (*Provider, error) {
 	xStruct := xunsafe.NewStruct(sType)
 	for i := range xStruct.Fields {
 		field := &xStruct.Fields[i]
+		if tapperTag, ok := field.Tag.Lookup("tapper"); ok {
+			if tapperTag == "-" {
+				continue
+			}
+		}
+
 		switch field.Kind() {
 		case reflect.Int, reflect.Int64, reflect.Uint, reflect.Uint64:
 			result.mask |= intMaks
