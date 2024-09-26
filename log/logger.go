@@ -2,6 +2,7 @@ package log
 
 import (
 	"context"
+	"fmt"
 	"github.com/viant/afs"
 	"github.com/viant/tapper/config"
 	"github.com/viant/tapper/emitter"
@@ -110,6 +111,9 @@ func (l *Logger) Merge(ctx context.Context, from *Logger) error {
 	l.mux.Lock()
 	defer l.mux.Unlock()
 	dest := l.getWriter()
+	if err := dest.Flush(); err != nil {
+		return fmt.Errorf("failed to merge: flush: %w", err)
+	}
 	for _, aWriter := range from.writers {
 		if aWriter == nil || aWriter.isClosed() {
 			continue
