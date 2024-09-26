@@ -253,7 +253,7 @@ func (w *writer) merge(ctx context.Context, from *writer) error {
 	if err := from.Flush(); err != nil {
 		return fmt.Errorf("failed to merge loggers: flush: %w", err)
 	}
-	source, reader, err := from.sourceReader(context.Background())
+	sourceURL, reader, err := from.sourceReader(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to merge loggers: %w", err)
 	}
@@ -265,7 +265,7 @@ func (w *writer) merge(ctx context.Context, from *writer) error {
 		return fmt.Errorf("failed to merge loggers: copy %w", err)
 	}
 	atomic.CompareAndSwapInt32(&from.closed, 0, 1)
-	_ = w.fs.Delete(ctx, source)
+	_ = w.fs.Delete(ctx, sourceURL)
 	return nil
 }
 
