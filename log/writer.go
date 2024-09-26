@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"compress/gzip"
 	"context"
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/viant/afs"
 	"github.com/viant/afs/file"
@@ -21,7 +22,7 @@ import (
 	"time"
 )
 
-//writer represents an optimized writer
+// writer represents an optimized writer
 type writer struct {
 	index            int
 	emitter          *emitter.Service
@@ -44,7 +45,11 @@ type writer struct {
 	loggerClose      bool
 }
 
-//Close closes this writer
+func (w *writer) isClosed() bool {
+	return atomic.LoadInt32(&w.closed) == 1
+}
+
+// Close closes this writer
 func (w *writer) Close() error {
 	if !atomic.CompareAndSwapInt32(&w.closed, 0, 1) {
 		return nil
@@ -68,8 +73,8 @@ func (w *writer) Close() error {
 	}
 	if w.loggerClose {
 		if err := w.closeQuietly(); err != nil {
-			 log.Print(err)
-			 return err
+			log.Print(err)
+			return err
 		}
 		return nil
 	}
@@ -91,7 +96,7 @@ func (w *writer) closeQuietly() error {
 	if err == nil {
 		if w.count == 0 {
 			if w.rotationPath != "" {
-				w.fs.Delete(ctx,w.rotationPath)
+				w.fs.Delete(ctx, w.rotationPath)
 			}
 			return nil
 		}
@@ -155,11 +160,7 @@ func (w *writer) compress(ctx context.Context) (err error) {
 	if !w.config.Rotation.IsGzip() {
 		return
 	}
-	source := w.rotationURL
-	if w.rotationPath != "" {
-		source = w.rotationPath
-	}
-	reader, err := w.fs.OpenURL(ctx, source)
+	source, reader, err := w.sourceReader(ctx)
 	if err != nil {
 		return err
 	}
@@ -181,7 +182,19 @@ func (w *writer) compress(ctx context.Context) (err error) {
 	return err
 }
 
-//isMaxReached returns true if max records per writer are exceeded
+func (w *writer) sourceReader(ctx context.Context) (string, io.ReadCloser, error) {
+	source := w.rotationURL
+	if w.rotationPath != "" {
+		source = w.rotationPath
+	}
+	reader, err := w.fs.OpenURL(ctx, source)
+	if err != nil {
+		return "", nil, err
+	}
+	return source, reader, nil
+}
+
+// isMaxReached returns true if max records per writer are exceeded
 func (w *writer) isMaxReached() bool {
 	if w.max == 0 || w.count == 0 {
 		return false
@@ -189,7 +202,7 @@ func (w *writer) isMaxReached() bool {
 	return w.count >= w.max
 }
 
-//isExpired returns last write exceeded writer rotation time
+// isExpired returns last write exceeded writer rotation time
 func (w *writer) isExpired(now time.Time) bool {
 	if w.count == 0 {
 		return false
@@ -200,7 +213,7 @@ func (w *writer) isExpired(now time.Time) bool {
 	return w.expiryTime.Before(now)
 }
 
-//Write writes data
+// Write writes data
 func (w *writer) Write(bs []byte) (n int, err error) {
 	n, err = w.writer.Write(bs)
 	return n, err
@@ -211,7 +224,7 @@ func (w *writer) increment() int {
 
 }
 
-//Flush flushes log if needed
+// Flush flushes log if needed
 func (w *writer) Flush() error {
 	return w.flusher.Flush()
 }
@@ -236,7 +249,27 @@ func (w *writer) initRotation(rotation *config.Rotation, created time.Time, emit
 	}
 }
 
-//NewWriter creates a writer
+func (w *writer) merge(ctx context.Context, from *writer) error {
+	if err := from.Flush(); err != nil {
+		return fmt.Errorf("failed to merge loggers: flush: %w", err)
+	}
+	source, reader, err := from.sourceReader(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to merge loggers: %w", err)
+	}
+	defer reader.Close()
+	if _, err = w.writer.Write([]byte("\n")); err != nil {
+		return fmt.Errorf("failed to merge loggers: newLine %w", err)
+	}
+	if _, err = io.Copy(w.writer, reader); err != nil {
+		return fmt.Errorf("failed to merge loggers: copy %w", err)
+	}
+	atomic.CompareAndSwapInt32(&from.closed, 0, 1)
+	_ = w.fs.Delete(ctx, source)
+	return nil
+}
+
+// NewWriter creates a writer
 func newWriter(config *config.Stream, fs afs.Service, rotationURL string, index int, created time.Time, emitter *emitter.Service) (*writer, error) {
 
 	var options = make([]storage.Option, 0)

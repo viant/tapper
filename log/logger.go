@@ -1,6 +1,7 @@
 package log
 
 import (
+	"context"
 	"github.com/viant/afs"
 	"github.com/viant/tapper/config"
 	"github.com/viant/tapper/emitter"
@@ -11,7 +12,7 @@ import (
 	"time"
 )
 
-//Logger represents file system transaction logger
+// Logger represents file system transaction logger
 type Logger struct {
 	ID      string
 	fs      afs.Service
@@ -41,7 +42,7 @@ func (l *Logger) monitorWriters() {
 	}
 }
 
-//Close closes logger
+// Close closes logger
 func (l *Logger) Close() (err error) {
 	atomic.StoreInt32(&l.closed, 1)
 	for _, writer := range l.writers {
@@ -73,7 +74,7 @@ func (l *Logger) getWriter() *writer {
 	return l.writers[index]
 }
 
-//Log logs a message
+// Log logs a message
 func (l *Logger) Log(message msg.Message) (err error) {
 	now := time.Now()
 	l.mux.Lock()
@@ -92,8 +93,6 @@ func (l *Logger) Log(message msg.Message) (err error) {
 	return err
 }
 
-
-
 func (l *Logger) rotateIfNeeded(writer *writer, now time.Time) (err error) {
 	if writer.isMaxReached() || writer.isExpired(now) {
 		if err = writer.Close(); err == nil {
@@ -104,7 +103,25 @@ func (l *Logger) rotateIfNeeded(writer *writer, now time.Time) (err error) {
 	return err
 }
 
-//New creates a transaction logger
+func (l *Logger) Merge(ctx context.Context, from *Logger) error {
+	if from == nil {
+		return nil
+	}
+	l.mux.Lock()
+	defer l.mux.Unlock()
+	dest := l.getWriter()
+	for _, aWriter := range from.writers {
+		if aWriter == nil || aWriter.isClosed() {
+			continue
+		}
+		if err := dest.merge(ctx, aWriter); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// New creates a transaction logger
 func New(config *config.Stream, ID string, fs afs.Service) (*Logger, error) {
 	config.Init()
 	emitter, err := emitter.New(config)
