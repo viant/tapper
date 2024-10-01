@@ -187,6 +187,15 @@ func (w *writer) sourceReader(ctx context.Context) (string, io.ReadCloser, error
 	if w.rotationPath != "" {
 		source = w.rotationPath
 	}
+
+	if source == "" {
+		source = w.destURL
+	}
+
+	if source == "" {
+		return "", nil, fmt.Errorf("sourceReader: source URL was empty")
+	}
+
 	reader, err := w.fs.OpenURL(ctx, source)
 	if err != nil {
 		return "", nil, err
