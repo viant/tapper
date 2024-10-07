@@ -182,7 +182,7 @@ func (w *writer) compress(ctx context.Context) (err error) {
 	return err
 }
 
-func (w *writer) sourceReader(ctx context.Context) (string, io.ReadCloser, error) {
+func (w *writer) sourceURL(ctx context.Context) string {
 	source := w.rotationURL
 	if w.rotationPath != "" {
 		source = w.rotationPath
@@ -191,7 +191,10 @@ func (w *writer) sourceReader(ctx context.Context) (string, io.ReadCloser, error
 	if source == "" {
 		source = w.destURL
 	}
-
+	return source
+}
+func (w *writer) sourceReader(ctx context.Context) (string, io.ReadCloser, error) {
+	source := w.sourceURL(ctx)
 	if source == "" {
 		return "", nil, fmt.Errorf("sourceReader: source URL was empty")
 	}
@@ -256,26 +259,6 @@ func (w *writer) initRotation(rotation *config.Rotation, created time.Time, emit
 	if rotation.Emit != nil {
 		w.emitter = emitter
 	}
-}
-
-func (w *writer) merge(ctx context.Context, from *writer) error {
-	if err := from.Flush(); err != nil {
-		return fmt.Errorf("failed to merge loggers: flush: %w", err)
-	}
-	sourceURL, reader, err := from.sourceReader(context.Background())
-	if err != nil {
-		return fmt.Errorf("failed to merge loggers: %w", err)
-	}
-	defer reader.Close()
-	if _, err = w.writer.Write([]byte("\n")); err != nil {
-		return fmt.Errorf("failed to merge loggers: newLine %w", err)
-	}
-	if _, err = io.Copy(w.writer, reader); err != nil {
-		return fmt.Errorf("failed to merge loggers: copy %w", err)
-	}
-	atomic.CompareAndSwapInt32(&from.closed, 0, 1)
-	_ = w.fs.Delete(ctx, sourceURL)
-	return nil
 }
 
 // NewWriter creates a writer

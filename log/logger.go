@@ -1,8 +1,6 @@
 package log
 
 import (
-	"context"
-	"fmt"
 	"github.com/viant/afs"
 	"github.com/viant/tapper/config"
 	"github.com/viant/tapper/emitter"
@@ -102,27 +100,6 @@ func (l *Logger) rotateIfNeeded(writer *writer, now time.Time) (err error) {
 		}
 	}
 	return err
-}
-
-func (l *Logger) Merge(ctx context.Context, from *Logger) error {
-	if from == nil {
-		return nil
-	}
-	l.mux.Lock()
-	defer l.mux.Unlock()
-	dest := l.getWriter()
-	if err := dest.Flush(); err != nil {
-		return fmt.Errorf("failed to merge: flush: %w", err)
-	}
-	for _, aWriter := range from.writers {
-		if aWriter == nil || aWriter.isClosed() {
-			continue
-		}
-		if err := dest.merge(ctx, aWriter); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // New creates a transaction logger
