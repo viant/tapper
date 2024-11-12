@@ -82,7 +82,7 @@ func (l *Logger) Log(message msg.Message) (err error) {
 	_, err = message.WriteTo(writer)
 	if err == nil {
 		count := writer.increment()
-		if l.config.FlushMod > 0 && count&l.config.FlushMod == 0 {
+		if l.config.FlushMod > 0 && count%l.config.FlushMod == 0 {
 			err = writer.Flush()
 		}
 		if err == nil {
